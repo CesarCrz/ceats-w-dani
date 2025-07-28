@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Segoe+UI&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="CSS/main.css">
+<script src="/socket.io/socket.io.js"></script>
+<link rel="icon" href="IMG/favicon90.png" type="image/png">
+<title>Soru - Sistema de Gestión</title>
+</head>
+<body>
+    <!-- Main App -->
+    <div class="main-app" id="mainApp">
+        <div class="app-layout">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-content">
+                    <div class="logo">
+                        <i class="fas fa-utensils"></i>
+                        <span>Soru Restaurant</span>
+                    </div>
+                    <div class="user-controls">
+                        <img id="iconoSonido" src="Img/bell_off.svg" alt="Sonido de pedidos" title="Activar sonido" style="width: 26px; height: 26px; cursor: pointer; margin-right: 10px;">
+                        <div class="user-menu">
+                            <button class="user-menu-btn" id="userMenuBtn">
+                                <i class="fas fa-user-circle"></i>
+                                <span id="userDisplayName">Usuario</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div class="user-dropdown" id="userDropdown">
+                                <div class="user-dropdown-item" id="adminPanelBtn">
+                                    <i class="fas fa-cog"></i>
+                                    <span>Panel de Administrador</span>
+                                </div>
+                                <div class="user-dropdown-item" id="corte">
+                                    <i class="fa-solid fa-money-check-dollar"></i>
+                                    <span>Corte</span>
+                                </div>
+                                <div class="user-dropdown-item" id="logoutBtn">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                    <span>Cerrar Sesión</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Navigation -->
+            <div class="nav-tabs">
+                <button class="tab-btn active" data-tab="pedidosActivos">
+                    <i class="fas fa-fire"></i>
+                    <span>Pedidos Activos</span>
+                </button>
+                <button class="tab-btn" data-tab="historial">
+                    <i class="fas fa-history"></i>
+                    <span>Historial</span>
+                </button>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="main-content">
+                <!-- Pedidos Activos Tab -->
+                <div class="tab-content active" id="pedidosActivos">
+                    <!-- Notification Area -->
+                    <div class="notification-area" id="notificationArea">
+                        <div class="notification-card" id="newOrderNotification">
+                            <div class="notification-icon">
+                                <i class="fas fa-bell"></i>
+                            </div>
+                            <div class="notification-content">
+                                <h3>¡Nuevo Pedido Recibido!</h3>
+                                <p>Tienes un nuevo pedido pendiente por aceptar.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Order Sections -->
+                    <div class="order-sections">
+                        <!-- En Preparación Section -->
+                        <div class="order-section">
+                            <div class="section-title">
+                                <i class="fas fa-fire"></i>
+                                <span>En Preparación</span>
+                                <!-- <span class="badge-preparacion" id="contadorPreparacion">0</span> -->
+                            </div>
+                            <div class="order-grid" id="preparacionGrid">
+                                <div class="empty-state" id="preparacionEmpty">
+                                    <i class="fas fa-utensils"></i>
+                                    <h3>No hay pedidos en preparación</h3>
+                                    <p>Los pedidos aceptados aparecerán aquí</p>
+                                </div>
+                                <!-- Order cards will be added here dynamically -->
+                            </div>
+                        </div>
+                        
+                        <!-- Listo Section -->
+                        <div class="order-section">
+                            <div class="section-title">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Listo</span>
+                            </div>
+                            <div class="order-grid" id="listoGrid">
+                                <div class="empty-state" id="listoEmpty">
+                                    <i class="fas fa-check-circle"></i>
+                                    <h3>No hay pedidos listos</h3>
+                                    <p>Los pedidos listos aparecerán aquí</p>
+                                </div>
+                                <!-- Order cards will be added here dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Historial Tab -->
+                <div class="tab-content" id="historial">
+                    <div class="historial-container">
+                        <div class="historial-filters">
+                            <div class="form-group">
+                                <label for="historialFilter">Filtrar por Estado</label>
+                                <select id="historialFilter" class="form-control">
+                                    <option value="Todos">Todos los pedidos</option>
+                                    <option value="Liberado">Liberados</option>
+                                    <option value="Cancelado">Cancelados</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" id="refreshHistorialBtn">
+                                <i class="fas fa-sync-alt"></i>
+                                <span>Actualizar</span>
+                            </button>
+                        </div>
+                        <div class="historial-grid" id="historialGrid">
+                            <!-- Historial items will be added here dynamically -->
+                            <div class="empty-state" id="historialEmpty">
+                                <i class="fas fa-history"></i>
+                                <h3>No hay pedidos en el historial</h3>
+                                <p>El historial de pedidos aparecerá aquí</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Admin Panel Tab (Hidden by default) -->
+                <div class="tab-content" id="adminPanel">
+                    <div class="admin-panel">
+                        <div class="admin-section">
+                            <h2 class="admin-title">Panel de Administrador</h2>
+                            <div class="admin-grid">
+                                <div class="admin-card">
+                                    <div class="admin-card-title">Pedidos Totales</div>
+                                    <div class="admin-card-value" id="totalPedidos">0</div>
+                                    <div class="admin-card-footer">Últimas 24 hrs</div>
+                                </div>
+                                <div class="admin-card">
+                                    <div class="admin-card-title">Pedidos Completados</div>
+                                    <div class="admin-card-value" id="completedPedidos">0</div>
+                                    <div class="admin-card-footer">Últimas 24 hrs</div>
+                                </div>
+                                <div class="admin-card">
+                                    <div class="admin-card-title">Pedidos Cancelados</div>
+                                    <div class="admin-card-value" id="canceledPedidos">0</div>
+                                    <div class="admin-card-footer">Últimas 24 hrs</div>
+                                </div>
+                                <div class="admin-card">
+                                    <div class="admin-card-title">Tiempo Promedio</div>
+                                    <div class="admin-card-value" id="avgTime">0 min</div>
+                                    <div class="admin-card-footer">De preparación</div>
+                                </div>
+                                <div class="admin-card">
+                                    <div class="admin-card-title">Pagos por efectivo</div>
+                                    <div class="admin-card-value" id="efectPedidos">0</div>
+                                    <div class="admin-card-footer">Últimas 24 hrs</div>
+                                </div>
+                                <div class="admin-card">
+                                    <div class="admin-card-title">Pagos por tarjeta</div>
+                                    <div class="admin-card-value" id="cardPedidos">0</div>
+                                    <div class="admin-card-footer">Últimas 24 hrs</div>
+                                </div>
+                                <div class="admin-card">
+                                    <div class="admin-card-title">Pagos por transferencia</div>
+                                    <div class="admin-card-value" id="transPedidos">0</div>
+                                    <div class="admin-card-footer">Últimas 24 hrs</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="admin-section">
+                            <h2 class="admin-title">Configuración</h2>
+                            <div class="form-group">
+                                <label for="autoPrintEnabled">Impresión Automática</label>
+                                <select id="autoPrintEnabled" class="form-control">
+                                    <option value="true">Activada</option>
+                                    <option value="false">Desactivada</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary cambiar-password" id="cambiarContraseña">
+                                <i class="fas fa-lock"></i>
+                                Cambiar contraseña
+                            </button>
+                            <!-- <button class="btn btn-primary save-config" id="saveSettingsBtn">
+                                <i class="fas fa-save"></i>
+                                <span>Guardar Configuración</span>
+                            </button> -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Detail Modal -->
+    <div class="modal-overlay" id="orderDetailModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title" id="orderDetailTitle">Detalle del Pedido</div>
+                <button class="modal-close" id="orderDetailClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="order-detail" id="orderDetailContent">
+                    <!-- Order detail content will be added here dynamically -->
+                </div>
+                
+                <div class="timer-container" id="timerContainer">
+                    <div class="timer-label">Tiempo de Preparación</div>
+                    <div class="timer-value" id="timerValue">00:00</div>
+                    <div class="timer-input-group" id="timerInputGroup">
+                        <input type="number" class="timer-input" id="timerInput" min="1" max="60" value="15">
+                        <span>minutos</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" id="orderDetailFooter">
+                <!-- Buttons will be added here dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancelación Modal -->
+    <div class="modal-overlay" id="cancelacionModal">
+        <div class="modal cancelacion-modal">
+            <div class="modal-header">
+                <div class="modal-title">Cancelar Pedido</div>
+                <button class="modal-close" id="cancelacionClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="cancelacion-form">
+                    <div>
+                        <div class="cancelacion-label">Motivo de Cancelación</div>
+                        <div class="cancelacion-note">Este mensaje se enviará al cliente</div>
+                    </div>
+                    <textarea class="cancelacion-textarea" id="motivoCancelacion" placeholder="Explica el motivo de la cancelación..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-light" id="cancelarCancelacionBtn">
+                    <i class="fas fa-times"></i>
+                    <span>Cancelar</span>
+                </button>
+                <button class="btn btn-danger" id="confirmarCancelacionBtn">
+                    <i class="fas fa-check"></i>
+                    <span>Confirmar Cancelación</span>
+                </button>
+            </div>
+        </div>  
+    </div>
+
+    <div id="historial" class="tab-content">
+        <div class="historial-container">
+            <div class="historial-header">
+            <h2>Historial de Pedidos</h2>
+            <div class="filtros">
+                <select class="filtro-estado">
+                <option value="">Todos</option>
+                <option value="listo">Listo</option>
+                <option value="preparacion">En preparación</option>
+                <option value="cancelado">Cancelado</option>
+                </select>
+                <button class="btn-primary">Filtrar</button>
+            </div>
+            </div>
+            <div class="historial-lista">
+            <div class="pedido-item">
+                <div>
+                <strong>Pedido #1234</strong><br>
+                Cliente: Juan Pérez
+                </div>
+                <div class="estado estado-listo">Listo</div>
+            </div>
+            <div class="pedido-item">
+                <div>
+                <strong>Pedido #1235</strong><br>
+                Cliente: María López
+                </div>
+                <div class="estado estado-preparacion">En preparación</div>
+            </div>
+            <div class="pedido-item">
+                <div>
+                <strong>Pedido #1236</strong><br>
+                Cliente: Carlos Ruiz
+                </div>
+                <div class="estado estado-cancelado">Cancelado</div>
+            </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="popup-overlay" id="pedidoPopup">
+        <div class="popup-card">
+            <header class="popup-header">
+            <div class="header-left">
+                <span class="popup-close" id="cerrarPopup">×</span>
+                <span class="popup-title" id="popupTitulo">Cliente • #Código</span>
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn" id="btnImprimirPopup">🖨️</button>
+                <!-- <button class="icon-btn">📞</button> -->
+            </div>
+            </header>
+
+            <div class="popup-body">
+                <div class="popup-status">
+                    <span>1 artículo(s)</span>
+                    <!-- <span class="popup-badge">🍴 No</span>
+                    <span class="popup-client">Cliente nuevo</span> -->
+                </div>
+
+                <!-- Aquí el JS agregará dinámicamente los .popup-item de cada producto -->
+                <div class="popup-items-container">
+                    <!-- Los items se insertarán aquí -->
+                </div>
+
+                <div class="popup-summary"></div>
+
+                <div class="popup-tiempo">
+                    <span id="listo-en">Listo en</span>
+                    <div class="time-controls">
+                        <button id="decrementarTiempo">−</button>
+                        <span id="tiempoDisplay">0 min</span>
+                        <button id="incrementarTiempo">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="popup-footer" style="justify-content: center;">
+                <button class="btn secundario" id="btn-ajustar" style="display: none;">Ajustar pedido</button>
+                <button class="btn primario" id="btn-aceptar" data-estado="pendiente">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- POPUP LISTO (MODERNIZADO) -->
+    <div class="popup-overlay" id="pedidoPopupListo">
+        <div class="popup-card-listo">
+            <header class="popup-header">
+            <div class="header-left">
+                <span class="popup-close" id="cerrarPopupListo">×</span>
+                <span class="popup-title" id="popupTituloListo">MiniDany • #SORU1</span>
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn" id="btnImprimirPopupListo">🖨️</button>
+            </div>
+            </header>
+            <div class="popup-body">
+            <div class="popup-status">
+                <span>1 artículo(s)</span>
+                <!-- <span class="popup-badge">🍴 No</span>
+                <span class="popup-client">Cliente nuevo</span> -->
+            </div>
+            <div class="popup-items-container-listo"></div>
+            <div class="popup-summary-listo"></div>
+            </div>
+            <div class="popup-footer" style="justify-content: center; gap: 18px;">
+                <button class="btn secundarioListo" id="btn-Cancelar" style="background:#e33434; color:white;">Cancelar pedido</button>
+                <button class="btn primarioListo" id="btn-Liberar" style="background:#0066ff; color:white;">Liberar pedido</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- MODAL PARA CANCELAR EL PEDIDO -->
+    <div class="modal-overlay" id="cancelarPedidoOverlay" style="display:none;">
+        <div class="modal cancelar-modal">
+            <div class="modal-header">
+                <span class="modal-title">Cancelar pedido</span>
+                <button class="modal-close" id="cerrarCancelarPedidoBtn" title="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="formCancelarPedido" class="cancelacion-form">
+                    <label for="motivoCancelacion" class="cancelacion-label">Motivo de la cancelación</label>
+                    <textarea id="motivoCancelacion" class="cancelacion-textarea" required placeholder="Explica el motivo..."></textarea>
+                    <div class="modal-footer" style="justify-content: flex-end; gap: 14px;">
+                        <button type="button" class="btn btn-light" id="cancelarCancelarPedidoBtn">Cerrar</button>
+                        <button type="submit" class="btn btn-danger">Enviar</button>
+                    </div>
+                    <div id="estadoCancelarPedido" style="margin-top:10px;font-size:1rem"></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PARA CAMBIAR CONTRASEÑA -->
+    <div id="passwordModal" class="modal-password">
+        <div class="modal-content">
+            <div class="modal-header-password">
+                <h3>Cambiar Contraseña</h3>
+                <span class="close" id="closeModalPassword">&times;</span>
+            </div>
+        
+            <form id="passwordForm" class="formpass">
+                <select name="" id="profile" class="select-profile">
+                    <option value=""></option>
+                    <option value="Admin">Administrador</option>
+                    <option value="ITESO">ITESO</option>
+                    <option value="TESORO">TESORO</option>
+                </select>
+                <input type="password" placeholder="Contraseña actual" id="oldPassword" required>
+                <input type="password" placeholder="Nueva contraseña" id="newPassword" required>
+                <input type="password" placeholder="Confirmar nueva contraseña" id="confirmNewPassword" required>
+                <button class="btn-save" type="button" id="btn-confirm">Guardar</button>
+            </form>
+            <div id="estadoPassword" style="margin-top:10px;font-size:1rem"></div>
+        </div>
+    </div>
+
+    <!-- Overlay del popup -->
+    <div class="popup-overlay-corte" id="popupCorte">
+        <div class="corte-container">
+            <div class="corte-header">
+                <h2 class="corte-titulo">Corte de Caja</h2>
+                <div class="corte-sucursal-row" id="corteSucursalSelectContainer">
+                    <label for="corteSucursalSelect"><strong>Sucursal:</strong></label>
+                    <select id="corteSucursalSelect">
+                        <option value=""></option>
+                        <option value="ITESO">ITESO</option>
+                        <option value="TESORO">TESORO</option>
+                    </select>
+                </div>
+            </div>
+            <div class="campo">
+                <span>Venta Efectivo:</span>
+                <span class="valor" id="ventaEfectivo">$0.00</span>
+            </div>
+            <div class="campo">
+                <span>Venta Terminal:</span>
+                <span class="valor" id="ventaTerminal">$0.00</span>
+            </div>
+            <hr>
+            <div class="campo" style="font-size: 18px;">
+                <span><strong>VENTA TOTAL:</strong></span>
+                <span class="valor" id="ventaTotal">$0.00</span>
+            </div>
+            <button class="boton-generar" onclick="abrirPopupEnviarCorte()">Generar Corte</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay-correo" id="popupEnviarCorreo">
+        <div class="modal-content-correo">
+            <div class="modal-header-correo">
+                <h3>Enviar corte de caja</h3>
+                <span class="close" id="closePopupCorreo">&times;</span>
+            </div>
+            <form id="formCorreo" class="form-correo">
+                <input type="text" id="nameDestinatario" placeholder="Nombre del destinatario">
+                <input type="email" id="mailDestinatario" placeholder="Correo Electronico">
+                <button class="btn-save" type="button" onclick="enviarCorteEmail()">Enviar</button>
+            </form>
+            <div id="estadoCorreo" style="margin-top:10px;font-size:1rem"></div>
+        </div>
+    </div>
+
+    <!-- Toast Pedido Liberado -->
+    <div id="toastNotification" style="
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 240px;
+    max-width: 90vw;
+    background: #0066ff;
+    color: white;
+    font-size: 1.15rem;
+    padding: 16px 32px;
+    border-radius: 18px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    opacity: 0;
+    transition: opacity 0.4s, bottom 0.4s;
+    z-index: 9999;
+    text-align: center;
+    pointer-events: none;
+    "><b style="font-weight: bold;">SORU01</b></div>
+
+    <!-- Print Frame (Hidden) -->
+    <iframe id="printFrame" style="display:none;"></iframe>
+
+    <!-- Audio Elements -->
+    <audio id="newOrderSound" preload="auto">
+        <source src="Audio/newOrderSound.mp3" type="audio/mpeg">
+    </audio>
+    <!-- <audio id="orderReadySound" preload="auto">
+        <source src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_270f49d29e.mp3?filename=interface-124464.mp3" type="audio/mp3">
+    </audio>
+    <audio id="orderCancelSound" preload="auto">
+        <source src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_12b0c7443c.mp3?filename=error-call-to-attention-129258.mp3" type="audio/mp3">
+    </audio> -->
+
+    <script src="JS/main.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Ticket de Pedido - Soru Restaurant</title>
+   <link rel="icon" href="IMG/favicon90.png" type="image/png">
+   <link rel="stylesheet" href="CSS/ticket.css">
+</head>
+<body>
+   <div class="ticket">
+       <!-- Header -->
+       <div class="header">
+           <div class="logo"> SORU </div>
+           <div class="info">Auténtico Sabor Japonés</div>
+           <div class="info">Sucursal: <span id="sucursal">ITESO</span></div>
+           <div class="info">Pedido #<span id="orderId">SORU001</span></div>
+           <div class="info">Fecha: <span id="orderDate">01/01/2023 12:00:00</span></div>
+       </div>
+
+       <!-- Order Type -->
+       <div class="order-type order-type-delivery" id="orderType"></div>
+
+       <!-- Urgent Order -->
+       <div class="urgent-order" id="urgentOrder"> PEDIDO URGENTE </div>
+
+       <!-- Customer Info -->
+       <div class="customer-info">
+           <div><strong>Cliente:</strong> <span id="customerName">Juan Pérez</span></div>
+           <div><strong>Teléfono:</strong> <span id="customerPhone">5555-1234</span></div>
+           <div><strong>Dirección:</strong> <span id="customerAddress">Av. General Ramón Corona 2514, Zapopan, Jalisco</span></div>
+           <div><strong>Entregar a:</strong> <span id="deliverTo">Juan Pérez</span></div>
+       </div>
+
+       <!-- Special Instructions -->
+       <div class="special-instructions" id="specialInstructions">
+           <div><strong>Instrucciones especiales:</strong></div>
+           <div id="instructionsText">Sin cebolla, extra salsa de soya</div>
+       </div>
+
+       <!-- Order Items -->
+       <div class="order-items" id="orderItems"></div>
+
+       <!-- Totals -->
+       <div class="totals">
+           <div class="total-row"><span>Subtotal:</span><span id="subtotal">$350.00</span></div>
+           <div class="total-row"><span>Envío:</span><span id="deliveryFee">$0.00</span></div>
+           <div class="total-row"><span>Descuento:</span><span id="discount">$0.00</span></div>
+           <div class="total-row total-final"><span>TOTAL:</span><span id="totalAmount">$350.00</span></div>
+           <div class="total-row"><span>Método de Pago:</span><span id="paymentMethod">Efectivo</span></div>
+       </div>
+
+       <!-- Footer -->
+       <div class="footer">
+           <div class="thank-you">¡Gracias por tu preferencia!</div>
+           <div class="review-section">
+               <div class="thank-you">Califica nuestro servicio:</div>
+               <div class="qr-placeholder" id="qrCode"></div>
+               <div class="review-text">Escanea para dejarnos tu reseña en Google</div>
+           </div>
+           <div class="thank-you"> Soru Restaurant - Auténtico Sabor Japonés </div>
+           <!-- <div class="review-text">www.soru-restaurant.com</div> -->
+       </div>
+   </div>
+
+   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+   <script src="JS/ticket.js"></script>
+</body>
+</html>

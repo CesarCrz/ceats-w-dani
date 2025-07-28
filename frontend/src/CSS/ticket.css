@@ -1,0 +1,235 @@
+@page {
+    size: 80mm 297mm;
+    margin: 0;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    width: 80mm;
+    background-color: white;
+    color: black;
+}
+
+.ticket {
+    padding: 5mm;
+}
+
+.header {
+    text-align: center;
+    border-bottom: 1px dashed black;
+    padding-bottom: 3mm;
+    margin-bottom: 3mm;
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 2mm;
+}
+
+.info {
+    font-size: 12px;
+    margin-bottom: 2mm;
+}
+
+.order-type {
+    text-align: center;
+    font-weight: bold;
+    padding: 2mm 0;
+    margin: 3mm 0;
+    border-radius: 3mm;
+}
+
+.order-type-delivery {
+    background-color: #f0f0f0;
+}
+
+.order-type-pickup {
+    background-color: #e0e0e0;
+}
+
+.urgent-order {
+    background-color: #ffdddd;
+    color: #cc0000;
+    text-align: center;
+    font-weight: bold;
+    padding: 2mm 0;
+    margin: 3mm 0;
+    border-radius: 3mm;
+    display: none;
+}
+
+.customer-info {
+    border: 1px solid #ddd;
+    border-radius: 3mm;
+    padding: 3mm;
+    margin-bottom: 3mm;
+    font-size: 12px;
+}
+
+.customer-info div {
+    margin-bottom: 1mm;
+}
+
+.special-instructions {
+    border: 1px solid #ddd;
+    border-radius: 3mm;
+    padding: 3mm;
+    margin-bottom: 3mm;
+    font-size: 12px;
+    display: none;
+}
+
+.order-items {
+    border-top: 1px dashed black;
+    border-bottom: 1px dashed black;
+    padding: 3mm 0;
+    margin-bottom: 3mm;
+}
+
+.order-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2mm;
+    font-size: 12px;
+}
+
+.item-description {
+    flex: 1;
+}
+
+.item-quantity {
+    font-weight: bold;
+    margin-right: 2mm;
+}
+
+.item-price {
+    text-align: right;
+    min-width: 15mm;
+}
+
+.totals {
+    font-size: 12px;
+    margin-bottom: 3mm;
+}
+
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1mm;
+}
+
+.total-final {
+    font-weight: bold;
+    font-size: 14px;
+    margin-top: 2mm;
+    margin-bottom: 2mm;
+}
+
+.footer {
+    text-align: center;
+    font-size: 12px;
+    margin-top: 5mm;
+}
+
+.thank-you {
+    font-weight: bold;
+    margin-bottom: 2mm;
+}
+
+.review-section {
+    margin: 3mm 0;
+}
+
+.qr-placeholder {
+    margin: 3mm auto;
+    width: 30mm;
+    height: 30mm;
+    background-color: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.review-text {
+    font-size: 10px;
+    margin-bottom: 2mm;
+}
+
+@media print {
+    body {
+        width: 100%;
+    }
+}
+
+
+/* Agrega esto al final de tu ticket.css */
+
+/* Ajustes para los items del pedido */
+.item {
+    margin-bottom: 4px;
+    font-size: 12px;
+    line-height: 1.2;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.item > div:first-child {
+    flex-basis: 100%;
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+
+.item-options, .item-complementos {
+    font-size: 11px;
+    color: #555;
+    flex-basis: 100%;
+    padding-left: 10px;
+    margin: 1px 0;
+}
+
+.item-price {
+    font-weight: bold;
+    margin-left: auto;
+    padding-left: 10px;
+}
+
+/* Ajustes generales para compactar el ticket */
+.ticket {
+    padding: 3mm;
+    font-size: 12px;
+}
+
+.header .logo {
+    font-size: 20px;
+    margin-bottom: 1mm;
+}
+
+.order-type {
+    padding: 1.5mm 0;
+    margin: 2mm 0;
+    font-size: 12px;
+}
+
+.customer-info, .special-instructions {
+    padding: 2mm;
+    margin-bottom: 2mm;
+}
+
+.order-items {
+    padding: 2mm 0;
+    margin-bottom: 2mm;
+}
+
+/* Asegurar que el ID de pedido sea visible */
+.info:nth-child(4) {  /* Selector para el elemento que muestra el ID de pedido */
+    font-weight: bold;
+    font-size: 13px;
+}
