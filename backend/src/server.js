@@ -8,6 +8,8 @@ const { error } = require('console');
 const app = express();
 const server = http.createServer(app)
 const io = socketIo(server)
+const PDFDocument = require('pdfkit');
+const nodemailer = require('nodemailer');
 const PORT = process.env.PORT || 3000;
 
 // Rutas relativas al backend/src
@@ -286,6 +288,73 @@ app.get('/api/corte', async (req, res) => {
     res.status(500).json({ error: 'Error al obtener el corte desde Sheets.' });
   }
 });;
+
+app.post('/api/enviarCorte', async (req, res) => {
+  try {
+    const { sucursal, nombreDestinatario, correoDestinatario } = req.body;
+    if (!sucursal || !correoDestinatario) {
+      return res.status(400).json({ error: 'Faltan datos para enviar el corte' });
+    }
+
+    // 1. Pide los pedidos liberados a tu Apps Script
+    const corteResp = await fetch('https://script.google.com/macros/s/AKfycbzhwNTB1cK11Y3Wm7uiuVrzNmu1HD1IlDTPlAJ37oUDgPIabCWbZqMZr-86mnUDK_JPBA/exec?action=getPedidos&sucursal=' + encodeURIComponent(sucursal) + '&estados=liberado');
+    const data = await corteResp.json();
+
+    // 2. Calcula el corte igual que en tu /api/corte
+    let efectivo = 0, tarjeta = 0;
+    const pedidos = Array.isArray(data.pedidos) ? data.pedidos : [];
+    pedidos.forEach(p => {
+      const pago = (p.pago || p.payMethod || '').toLowerCase();
+      const totalPedido = parseFloat(p.total) || 0;
+      if (pago === 'efectivo') efectivo += totalPedido;
+      else if (pago === 'tarjeta') tarjeta += totalPedido;
+    });
+    const total = efectivo + tarjeta;
+
+    // 3. Genera el PDF y envía por correo
+    let buffers = [];
+    const doc = new PDFDocument();
+    doc.on('data', buffers.push.bind(buffers));
+    doc.on('end', async () => {
+      const pdfData = Buffer.concat(buffers);
+
+      let transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: 'dannyglezhdzo@gmail.com', // Cambia por tu correo real
+          pass: 'jexh anjd wkqi znof'      // Contraseña de aplicación
+        }
+      });
+
+      await transporter.sendMail({
+        from: 'Sushi Soru Restaurant <dannglezhdzo@gmail.com>',
+        to: correoDestinatario,
+        subject: `Corte de caja - ${sucursal}`,
+        text: `Corte de caja generado por ${nombreDestinatario || correoDestinatario}`,
+        attachments: [
+          {
+            filename: `Corte_${sucursal}_${new Date().toISOString().substring(0, 10)}.pdf`,
+            content: pdfData
+          }
+        ]
+      });
+
+      res.json({ enviado: true });
+    });
+
+    doc.fontSize(20).text(`Corte de caja - ${sucursal}`, {align: 'center'});
+    doc.moveDown();
+    doc.fontSize(14).text(`Fecha: ${new Date().toLocaleString()}`);
+    doc.moveDown();
+    doc.text(`Ventas en efectivo: $${efectivo.toFixed(2)}`);
+    doc.text(`Ventas con tarjeta: $${tarjeta.toFixed(2)}`);
+    doc.text(`Total de ventas: $${total.toFixed(2)}`);
+    doc.end();
+  } catch (err) {
+    console.error("Error al enviar el corte:", err);
+    res.status(500).json({ error: 'Error al enviar el corte.' });
+  }
+});
 
 app.get('/api/pedidos.json', (req, res) => {
   const pedidos = cargarPedidos();

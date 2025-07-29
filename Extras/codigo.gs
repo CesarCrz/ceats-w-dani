@@ -149,7 +149,8 @@ function registrarPedido(params) {
   ]);
 
   try {
-    const result = sendOrderAPI(order);
+    //const result = sendOrderAPI(order);
+    // POR AHORA SE ESTA ENVIANDO DIRECTO DEL SERVIDOR PARA LA WEB-APP LO QUE QUIERE DECIR QUE EL SERVIDOR MANDA AQUI Y A LA WEB-APP
     Logger.log('Resultado backend: ' + result);
   } catch (e) {
     Logger.log('Error al enviar a backend: ' + e.message);
@@ -248,7 +249,7 @@ function respuestaJSON(objeto) {
 }
 
 function sendOrderAPI(newOrder){
-  const API = 'https://36ea0f707275.ngrok-free.app/api/pedidos/';
+  const API = 'https://add41b75dd32.ngrok-free.app/api/pedidos/';
   const sucursal = newOrder.sucursal;
   const payload = JSON.stringify(newOrder);
   const options = {

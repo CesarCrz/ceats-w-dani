@@ -237,9 +237,9 @@ function handleNewOrder(pedido) {
   grid.querySelectorAll('.order-card').forEach(card => card.remove());
 
   if (pedidosPrevios.length === 0) {
-    empty.style.display = "flex";
+    if (empty) empty.style.display = "flex";
   } else {
-    empty.style.display = "none";
+    if (empty) empty.style.display = "none";
     pedidosPrevios.forEach(p => {
       const card = document.createElement("div");
       card.className = "order-card " + (p.estado === "Pendiente" ? "modern-green" : "preparacion");
@@ -923,6 +923,7 @@ function mostrarPopupPedidoListo(pedido) {
   const statusSpan = document.querySelector('#pedidoPopupListo .popup-status span');
   const totalArticulos = obtenerCantidadTotalProductos(pedido);
   if (statusSpan) statusSpan.textContent = `${totalArticulos} artículo${totalArticulos === 1 ? '' : 's'}`;
+  document.getElementById('statusSucursalListo').textContent = `Sucursal: ${pedido.sucursal || "undefined"}`;
 
   // Limpia y rellena items
   const itemsContainer = document.querySelector('.popup-items-container-listo');
@@ -1209,6 +1210,7 @@ function mostrarPopupPedido(pedido) {
   const statusSpan = document.querySelector('.popup-status span');
   const totalArticulos = obtenerCantidadTotalProductos(pedido);
   if (statusSpan) statusSpan.textContent = `${totalArticulos} artículo${totalArticulos === 1 ? '' : 's'}`;
+  document.getElementById('statusSucursal').textContent = `Sucursal: ${pedido.sucursal || "undefined"}`;
 
   // Elimina los .popup-item existentes
   document.querySelectorAll('.popup-item').forEach(el => el.remove());
@@ -1871,17 +1873,25 @@ document.addEventListener('click', () => {
 // CERRAR POPUP CORTE
 const popupCorte = document.getElementById('popupCorte');
 const corteContainer = popupCorte.querySelector('.corte-container');
+const selectSucursal = document.getElementById('corteSucursalSelect');
 
 popupCorte.addEventListener('click', (e) => {
   if (!corteContainer.contains(e.target)) {
     popupCorte.style.display = 'none';
+    selectSucursal.value = '';
+    document.getElementById('ventaEfectivo').textContent = '$0.00';
+    document.getElementById('ventaTerminal').textContent = '$0.00';
+    document.getElementById('ventaTotal').textContent = '$0.00';
   }
 });
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && popupCorte.style.display === 'flex') {
     popupCorte.style.display = 'none';
-    console.log('🔴 Cerrando popup por tecla ESC');
+    selectSucursal.value = '';
+    document.getElementById('ventaEfectivo').textContent = '$0.00';
+    document.getElementById('ventaTerminal').textContent = '$0.00';
+    document.getElementById('ventaTotal').textContent = '$0.00';
   }
 });
 
@@ -1894,8 +1904,6 @@ function mostrarPopupCorte() {
 
   if (rol === 'admin') {
     selectContainer.style.display = 'flex';
-    // Selecciona sucursal default solo si está vacío
-    // if (!selectSucursal.value) selectSucursal.value = 'ITESO';
     cargarCorteSucursal(selectSucursal.value);
     selectSucursal.onchange = function() {
       cargarCorteSucursal(this.value);
@@ -1908,7 +1916,7 @@ function mostrarPopupCorte() {
 }
 
 function cargarCorteSucursal(sucursal) {
-  console.log("Cargar corte para:", sucursal);
+  // console.log("Cargar corte para:", sucursal);
   if (!sucursal) return;
   fetch(`/api/corte?sucursal=${encodeURIComponent(sucursal)}`)
     .then(res => res.json())
@@ -1930,19 +1938,33 @@ if (btnCorte) {
 }
 
 function abrirPopupEnviarCorte() {
-  const selectSucursal = document.getElementById('corteSucursalSelect').value;
-  const popupEnviarCorte = document.getElementById('popupEnviarCorreo')
+  const rol = localStorage.getItem('rol');
+  const sucursalUsuario = localStorage.getItem('sucursal');
+  const selectSucursal = document.getElementById('corteSucursalSelect');
+  const popupEnviarCorte = document.getElementById('popupEnviarCorreo');
+  const popupCorte = document.getElementById('popupCorte');
+  let sucursalSeleccionada = '';
 
-  if (!selectSucursal) {
-    showToast('Por favor, selecciona una sucursal.');
+  if (rol === 'admin') {
+    sucursalSeleccionada = selectSucursal.value;
+    if (!sucursalSeleccionada) {
+      showToast('Por favor, selecciona una sucursal.');
+      if (popupEnviarCorte) popupEnviarCorte.style.display = 'none';
+      return;
+    }
+  } else {
+    sucursalSeleccionada = sucursalUsuario;
+    if (!sucursalSeleccionada) {
+      showToast('No se pudo determinar la sucursal del usuario.');
+      if (popupEnviarCorte) popupEnviarCorte.style.display = 'none';
+      return;
+    }
   }
 
-  if (!popupEnviarCorte || !selectSucursal) {
-    popupEnviarCorte.style.display = 'none';
-  } else {
+  if (popupEnviarCorte) {
     popupEnviarCorte.style.display = 'flex';
-    popupEnviarCorte.setAttribute('data-sucursal', selectSucursal);
-    popupCorte.style.display = 'none'; // Cierra el popup de corte si está abierto
+    popupEnviarCorte.setAttribute('data-sucursal', sucursalSeleccionada);
+    if (popupCorte) popupCorte.style.display = 'none'; // Cierra el popup de corte si está abierto
   }
 }
 
@@ -1964,7 +1986,7 @@ equisCerrarCorreo.addEventListener('click', (e) => {
 popupEnviarCorreo.addEventListener('click', (e) => {
   if (!contenidoPopup.contains(e.target)) {
     popupEnviarCorreo.style.display = 'none';
-    console.log('🔴 Cerrando popup de correo por clic fuera');
+    // console.log('🔴 Cerrando popup de correo por clic fuera');
   }
 });
 
@@ -1972,6 +1994,7 @@ function enviarCorteEmail() {
   const estadoCorreo = document.getElementById('estadoCorreo');
   const nombreDestinatario = document.getElementById('nameDestinatario').value.trim();
   const correoDestinatario = document.getElementById('mailDestinatario').value.trim();
+  const sucursal = document.getElementById('popupEnviarCorreo').getAttribute('data-sucursal');
   estadoCorreo.textContent = '';
 
   // Validar que los campos no estén vacíos
@@ -1983,7 +2006,28 @@ function enviarCorteEmail() {
     }, 3000);
   }
 
-  // FALTA HACER EL ENVIO DEL CORREO CON LOS DATOS ----> VENTAS EN TARJETA, SUCURSAL, EFECTIVO Y TOTAL, FECHA Y HORA TODO EN UN EXCEL/PDF AUN NO SE CUAL.
+  fetch('/api/enviarCorte', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sucursal, nombreDestinatario, correoDestinatario })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.enviado) {
+      estadoCorreo.textContent = 'Correo enviado exitosamente.';
+      estadoCorreo.style.color = 'var(--success)';
+      estadoCorreo.timeout = setTimeout(() => {
+        popupEnviarCorreo.style.display = 'none';
+        estadoCorreo.textContent = '';
+      }, 3000);
+    } else {
+      estadoCorreo.textContent = 'Error al enviar el correo. Inténtalo de nuevo.';
+      estadoCorreo.style.color = 'var(--danger)';
+      estadoCorreo.timeout = setTimeout(() => {
+        estadoCorreo.textContent = '';
+      }, 3000);
+    }
+  })
 }
 
 // Ejemplo: Llama esta función cuando abras el panel admin o cada vez que quieras refrescar estadísticas

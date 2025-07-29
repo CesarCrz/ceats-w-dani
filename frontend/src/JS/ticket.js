@@ -29,6 +29,7 @@ function fillOrderData(orderData) {
   document.getElementById("customerAddress").textContent = orderData.domicilio || "—";
   document.getElementById("instructionsText").textContent = orderData.instrucciones || "—";
   document.getElementById("paymentMethod").textContent = orderData.metodoPago || "—";
+  document.getElementById("specs").textContent = orderData.instrucciones || "—";
 
   // Tipo de pedido
   console.log("Valor de tipo:", orderData.tipo);
@@ -61,9 +62,8 @@ function fillOrderData(orderData) {
     orderData.pedido.forEach(item => {
       const cantidad = parseInt(item.cantidad) || 1;
       const subtotalItem = parseFloat(item.subtotal) || 0;
-      const totalItem = cantidad * subtotalItem;
 
-      subtotal += totalItem;
+      subtotal += subtotalItem; // <-- ¡Agrega esta línea!
 
       const itemHTML = `
         <div class="item">
@@ -72,7 +72,7 @@ function fillOrderData(orderData) {
           ${Array.isArray(item.complementos) && item.complementos.length > 0
             ? `<div class="item-complementos">Complementos: ${item.complementos.join(', ')}</div>`
             : ""}
-          <div class="item-price">$${totalItem.toFixed(2)}</div>
+          <div class="item-price">$${subtotalItem.toFixed(2)}</div>
         </div>
       `;
       itemsContainer.innerHTML += itemHTML;

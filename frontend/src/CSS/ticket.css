@@ -77,6 +77,18 @@ body {
     margin-bottom: 1mm;
 }
 
+.costumer-spces {
+    border: 1px solid #ddd;
+    border-radius: 3mm;
+    padding: 3mm;
+    margin-bottom: 3mm;
+    font-size: 12px;
+}
+
+.customer-spces div {
+    margin-bottom: 1mm;
+}
+
 .special-instructions {
     border: 1px solid #ddd;
     border-radius: 3mm;

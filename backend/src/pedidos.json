@@ -1,1 +1,92 @@
-[]
+[
+  {
+    "codigo": "SORU2",
+    "deliverOrRest": "domicilio",
+    "estado": "Listo",
+    "nombre": "MiniDany",
+    "numero": "5213321854956",
+    "sucursal": "TESORO",
+    "pedido": [
+      {
+        "name": "Sushi culichi",
+        "quantity": 2,
+        "total": 200,
+        "currency": "MXN"
+      },
+      {
+        "name": "Sushi Mar y tierra",
+        "quantity": 2,
+        "total": 218,
+        "currency": "MXN"
+      }
+    ],
+    "specs": "Soya con chile, sin alga y soy alerigico al camaron",
+    "deliverTo": "",
+    "address": "Av. San Blas 2468",
+    "total": 418,
+    "currency": "MXN",
+    "payMethod": "tarjeta",
+    "date": "29/07/2025",
+    "hour": "05:29 PM"
+  },
+  {
+    "codigo": "SORU3",
+    "deliverOrRest": "domicilio",
+    "estado": "Listo",
+    "nombre": "MiniDany",
+    "numero": "5213321854956",
+    "sucursal": "TESORO",
+    "pedido": [
+      {
+        "name": "Sushi culichi",
+        "quantity": 2,
+        "total": 200,
+        "currency": "MXN"
+      },
+      {
+        "name": "Sushi Mar y tierra",
+        "quantity": 2,
+        "total": 218,
+        "currency": "MXN"
+      }
+    ],
+    "specs": "Soya con chile, sin alga y soy alerigico al camaron",
+    "deliverTo": "",
+    "address": "Av. San Blas 2468",
+    "total": 418,
+    "currency": "MXN",
+    "payMethod": "tarjeta",
+    "date": "29/07/2025",
+    "hour": "05:35 PM"
+  },
+  {
+    "codigo": "SORU4",
+    "deliverOrRest": "domicilio",
+    "estado": "En preparacion",
+    "nombre": "MiniDany",
+    "numero": "5213321854956",
+    "sucursal": "TESORO",
+    "pedido": [
+      {
+        "name": "Sushi culichi",
+        "quantity": 2,
+        "total": 200,
+        "currency": "MXN"
+      },
+      {
+        "name": "Sushi Mar y tierra",
+        "quantity": 2,
+        "total": 218,
+        "currency": "MXN"
+      }
+    ],
+    "specs": "Soya con chile, sin alga y soy alerigico al camaron",
+    "deliverTo": "",
+    "address": "Av. San Blas 2468",
+    "total": 418,
+    "currency": "MXN",
+    "payMethod": "tarjeta",
+    "date": "29/07/2025",
+    "hour": "05:50 PM"
+  }
+]
