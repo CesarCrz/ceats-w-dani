@@ -4,14 +4,16 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node backend/src/server.js"
+    "start": "node backend/src/server.js",
+    "dev": "nodemon backend/src/server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "express-session": "^1.18.1",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
     "node-fetch": "^3.3.2",
     "nodemailer": "^7.0.5",
     "pdfkit": "^0.17.1",

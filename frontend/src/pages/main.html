@@ -19,7 +19,8 @@
                 <div class="header-content">
                     <div class="logo">
                         <i class="fas fa-utensils"></i>
-                        <span>Soru Restaurant</span>
+                        <span>Soru Restaurant - </span>
+                        <span id="sucursalHeader">Sucursal: ---</span>
                     </div>
                     <div class="user-controls">
                         <img id="iconoSonido" src="Img/bell_off.svg" alt="Sonido de pedidos" title="Activar sonido" style="width: 26px; height: 26px; cursor: pointer; margin-right: 10px;">
@@ -84,7 +85,7 @@
                             <div class="section-title">
                                 <i class="fas fa-fire"></i>
                                 <span>En Preparación</span>
-                                <!-- <span class="badge-preparacion" id="contadorPreparacion">0</span> -->
+                                <span class="badge-preparacion" id="contadorPreparacion">0</span>
                             </div>
                             <div class="order-grid" id="preparacionGrid">
                                 <div class="empty-state" id="preparacionEmpty">
@@ -198,6 +199,9 @@
                             <button class="btn btn-primary cambiar-password" id="cambiarContraseña">
                                 <i class="fas fa-lock"></i>
                                 Cambiar contraseña
+                            </button>
+                            <button class="about-btn" id="about-btn" title="Acerca de">
+                                <i class="fa-solid fa-circle-info" style="color: #2858c8;"></i>
                             </button>
                             <!-- <button class="btn btn-primary save-config" id="saveSettingsBtn">
                                 <i class="fas fa-save"></i>
@@ -472,6 +476,30 @@
         </div>
     </div>
 
+    <!-- Modal acerca de -->
+    <div class="modal-overlay" id="aboutModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Acerca de Soru</div>
+                <button class="modal-close" id="aboutClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h3>Sistema de Gestión de Pedidos -<span class="aboutSpan"> (Soru)</span></h3>
+                <ul>
+                    <li>Pedidos con estados: Pendiente, En preparación, Listo, Liberado/Cancelado</li>
+                    <li>Historial de pedidos, corte de caja, estadísticas</li>
+                    <li>Integración con WhatsApp y Google Sheets</li>
+                    <li>Cambio de contraseñas, generación e impresión de tickets</li>
+                </ul>
+                <div style="margin-top:1em;">
+                    <b>Desarrolladores:</b> Paulo Cruz, Daniel González<br>
+                    <b>Versión:</b> 1.0.0<br>
+                    <b><span class="aboutSpan">MinIA</span> © 2025</b>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Pedido Liberado -->
     <div id="toastNotification" style="
     position: fixed;
@@ -492,6 +520,9 @@
     text-align: center;
     pointer-events: none;
     "><b style="font-weight: bold;">SORU01</b></div>
+
+    <!-- TOAST RIGHT -->
+    <div class="toast-noti" id="toastContainer"></div>
 
     <!-- Print Frame (Hidden) -->
     <iframe id="printFrame" style="display:none;"></iframe>

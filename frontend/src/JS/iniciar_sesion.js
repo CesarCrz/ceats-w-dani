@@ -17,7 +17,7 @@ function login() {
   const loader = document.getElementById('loginLoader');
 
   if (!email || !password) {
-    alert("⚠️ Por favor completa ambos campos.");
+    showLoginError("Por favor, completa todos los campos.");
     return;
   }
 
@@ -54,6 +54,7 @@ function login() {
       localStorage.setItem("email", email);
       localStorage.setItem("rol", data.rol);
       localStorage.setItem("sucursal", data.sucursal);
+      localStorage.setItem('showWelcomeToast', 'true');
       console.log("✅ Login correcto, redirigiendo a main...");
       window.location.href = "main";
     } else if (data.estado === "PASS_INVALIDA") {
@@ -68,7 +69,7 @@ function login() {
     if (loader) loader.style.display = 'none';
     document.getElementById("loginBtn").disabled = false;
     console.error("❌ Error de red o servidor:", error);
-    alert("❌ Ocurrió un error al iniciar sesión.");
+    showLoginError('Ocurrió un error al iniciar sesión. Por favor, intenta de nuevo más tarde.');
   });
 }
 

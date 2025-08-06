@@ -58,10 +58,14 @@ function guardarPedidos(pedidos) {
   fs.writeFileSync(PEDIDOS_FILE, JSON.stringify(pedidos, null, 2), 'utf-8');
 }
 
-app.post('/api/pedidos/:codigo/estado', (req, res) => {
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+const WEBHOOK_URL = 'https://webhook.site/e6bd42b2-b1ad-49be-ae2b-cc246c974c56';
+
+// Cambios aquí: endpoint para cambiar estado y enviar webhook simulando WhatsApp
+app.post('/api/pedidos/:codigo/estado', async (req, res) => {
   const { codigo } = req.params;
-  const { estado} = req.body;
-  
+  const { estado } = req.body;
+
   if (!estado) {
     return res.status(400).json({error: 'Falto el campo de estado'});
   }
@@ -73,10 +77,51 @@ app.post('/api/pedidos/:codigo/estado', (req, res) => {
     return res.status(404).json({error: 'Pedido no encontrado'});
   }
 
+  // Detectar el cambio de estado (para mensajes tipo WhatsApp)
+  const pedido = pedidos[idx];
+  const estadoAnterior = (pedido.estado || '').toLowerCase();
+  const nuevoEstado = (estado || '').toLowerCase();
   pedidos[idx].estado = estado;
   guardarPedidos(pedidos);
 
   io.emit('update_order', pedidos[idx]);
+
+  let DELIVER_REST = '';
+  if (pedido.deliverOrRest === 'domicilio') {
+    DELIVER_REST = `y será enviado al domicilio ${pedido.address}`;
+  } else if (pedido.deliverOrRest === 'entregar') {
+    DELIVER_REST = `para recoger en la sucursal ${pedido.sucursal}`;
+  }
+
+  // Mensajes simulados de WhatsApp por estado
+  let msg = null;
+  if (estadoAnterior === 'pendiente' && nuevoEstado === 'en preparacion') {
+    msg = `📢 Pedido ${pedido.codigo}: ¡Ha sido aceptado y está en preparación!`;
+  }
+  if (estadoAnterior === 'en preparacion' && nuevoEstado === 'listo') {
+    msg = `✅ Pedido ${pedido.codigo}: ¡Tu pedido está listo ${DELIVER_REST}!`;
+  }
+
+  // Enviar webhook si corresponde
+  if (msg) {
+    try {
+      await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          codigoPedido: pedido.codigo,
+          nombre: pedido.nombre,
+          estadoAnterior,
+          nuevoEstado,
+          mensaje: msg,
+          timestamp: new Date().toISOString()
+        })
+      });
+    } catch (e) {
+      console.error("Error enviando webhook:", e);
+      // Puedes ignorar el error o retornarlo si lo deseas
+    }
+  }
 
   res.json({ success: true, pedido: pedidos[idx] });
 });
@@ -135,9 +180,6 @@ app.get('/api/pedidos/:codigo', (req, res) => {
   }
 });
 
-// IMPORTANTE: Debes instalar node-fetch (npm install node-fetch)
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
-
 app.get('/api/obtenerPedidos', async (req, res) => {
   try {
     const sucursal = req.query.sucursal || 'ALL';
@@ -156,7 +198,7 @@ app.get('/api/obtenerPedidos', async (req, res) => {
 
 app.delete('/api/pedidos/:codigo', (req, res) => {
   const codigo = req.params.codigo;
-  let pedidos =cargarPedidos();
+  let pedidos = cargarPedidos();
 
   const idx = pedidos.findIndex(p => p.codigo === codigo || p.orderId === codigo);
   if (idx === -1) {
@@ -171,10 +213,10 @@ app.delete('/api/pedidos/:codigo', (req, res) => {
   res.json({ success: true, pedido: eliminado });
 })
 
+// Cancelado ya lo tenías: también manda webhook
 app.post('/api/cancelarPedido', async (req, res) => {
   const { codigoPedido, motivo } = req.body;
-  const WEBHOOK_URL = 'https://webhook.site/e45ed4d4-7a0b-4258-b03a-f4fa20a53a41';
-
+  // Usa la misma URL de webhook que arriba
   if (!codigoPedido || !motivo) {
     return res.status(400).json({ success: false, error: 'Faltan datos' });
   }
@@ -186,7 +228,8 @@ app.post('/api/cancelarPedido', async (req, res) => {
       body: JSON.stringify({
         codigoPedido,
         motivo,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        mensaje: `❌ Pedido ${codigoPedido}: Tu pedido ha sido cancelado. Motivo: ${motivo}`
       })
     });
 
@@ -269,8 +312,33 @@ app.get('/api/corte', async (req, res) => {
     const data = await response.json();
     const pedidos = Array.isArray(data.pedidos) ? data.pedidos : [];
 
+    // Cambia el filtro por fecha exacta (solo hoy)
+    function esMismoDia(pedido) {
+      const fecha = pedido.fecha || pedido.Fecha || pedido.date || pedido.Date;
+      if (!fecha) return false;
+      let pedidoDateObj;
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(fecha)) {
+        const [dia, mes, anio] = fecha.split('/');
+        pedidoDateObj = new Date(`${anio}-${mes}-${dia}`);
+      } else if (/^\d{4}-\d{2}-\d{2}/.test(fecha)) {
+        pedidoDateObj = new Date(fecha);
+      } else if (fecha.includes('T')) {
+        pedidoDateObj = new Date(fecha);
+      } else {
+        return false;
+      }
+      if (isNaN(pedidoDateObj)) return false;
+      const ahora = new Date();
+      return (
+        pedidoDateObj.getFullYear() === ahora.getFullYear() &&
+        pedidoDateObj.getMonth() === ahora.getMonth() &&
+        pedidoDateObj.getDate() === ahora.getDate()
+      );
+    }
+    const pedidosDelDia = pedidos.filter(esMismoDia);
+
     let efectivo = 0, tarjeta = 0;
-    pedidos.forEach(p => {
+    pedidosDelDia.forEach(p => {
       const pago = (p.pago || p.payMethod || '').toLowerCase();
       const totalPedido = parseFloat(p.total) || 0;
       if (pago === 'efectivo') efectivo += totalPedido;
@@ -287,7 +355,7 @@ app.get('/api/corte', async (req, res) => {
     console.error("Error en corte desde sheets:", err);
     res.status(500).json({ error: 'Error al obtener el corte desde Sheets.' });
   }
-});;
+});
 
 app.post('/api/enviarCorte', async (req, res) => {
   try {
@@ -300,10 +368,34 @@ app.post('/api/enviarCorte', async (req, res) => {
     const corteResp = await fetch('https://script.google.com/macros/s/AKfycbzhwNTB1cK11Y3Wm7uiuVrzNmu1HD1IlDTPlAJ37oUDgPIabCWbZqMZr-86mnUDK_JPBA/exec?action=getPedidos&sucursal=' + encodeURIComponent(sucursal) + '&estados=liberado');
     const data = await corteResp.json();
 
-    // 2. Calcula el corte igual que en tu /api/corte
-    let efectivo = 0, tarjeta = 0;
+    // 2. Calcula el corte solo para el día de hoy
+    function esMismoDia(pedido) {
+      const fecha = pedido.fecha || pedido.Fecha || pedido.date || pedido.Date;
+      if (!fecha) return false;
+      let pedidoDateObj;
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(fecha)) {
+        const [dia, mes, anio] = fecha.split('/');
+        pedidoDateObj = new Date(`${anio}-${mes}-${dia}`);
+      } else if (/^\d{4}-\d{2}-\d{2}/.test(fecha)) {
+        pedidoDateObj = new Date(fecha);
+      } else if (fecha.includes('T')) {
+        pedidoDateObj = new Date(fecha);
+      } else {
+        return false;
+      }
+      if (isNaN(pedidoDateObj)) return false;
+      const ahora = new Date();
+      return (
+        pedidoDateObj.getFullYear() === ahora.getFullYear() &&
+        pedidoDateObj.getMonth() === ahora.getMonth() &&
+        pedidoDateObj.getDate() === ahora.getDate()
+      );
+    }
     const pedidos = Array.isArray(data.pedidos) ? data.pedidos : [];
-    pedidos.forEach(p => {
+    const pedidosDelDia = pedidos.filter(esMismoDia);
+
+    let efectivo = 0, tarjeta = 0;
+    pedidosDelDia.forEach(p => {
       const pago = (p.pago || p.payMethod || '').toLowerCase();
       const totalPedido = parseFloat(p.total) || 0;
       if (pago === 'efectivo') efectivo += totalPedido;

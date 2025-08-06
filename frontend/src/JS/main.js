@@ -217,6 +217,49 @@ function setupSocketListeners() {
   });
 }
 
+// TOAST TOP RIGHT - Personalizable (toast-noti)
+function showToastTopRight({ 
+  message = '', 
+  duration = 3500, 
+  background = '#0066ff', // color de fondo por default
+  color = '#fff'          // color de texto por default
+} = {}) {
+  let container = document.getElementById('toastNoti');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toastNoti';
+    container.className = 'toast-noti';
+    document.body.appendChild(container);
+  }
+
+  // Crear el toast individual
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.style.background = background;
+  toast.style.color = color;
+
+  toast.innerHTML = `
+    <span>${message}</span>
+    <button class="close-toast" title="Cerrar">&times;</button>
+  `;
+
+  // Cerrar manualmente al dar clic en la X
+  toast.querySelector('.close-toast').onclick = () => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 400);
+  };
+
+  container.appendChild(toast);
+  // Mostrar con animación
+  setTimeout(() => toast.classList.add('show'), 30);
+
+  // Ocultar automáticamente después de duration
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 400);
+  }, duration);
+}
+
 function showToast(msg = '', duration = 3500) {
   const toast = document.getElementById('toastNotification');
   if (!toast) return;
@@ -297,6 +340,15 @@ function setupApp() {
   const userDisplayName = document.getElementById('userDisplayName');
   if (userDisplayName) {
     userDisplayName.textContent = email;
+  }
+
+  const sucursalHeader = document.getElementById('sucursalHeader');
+  if (sucursalHeader) {
+    if (rol === 'admin') {
+      sucursalHeader.textContent = `Administrador`;
+    } else {
+      sucursalHeader.textContent = sucursal ? `Sucursal: ${sucursal}` : 'undefined';
+    }
   }
 
   if (rol !== 'admin') {
@@ -407,7 +459,12 @@ function setupApp() {
       // Dentro del evento click del botón Aceptar/Listo:
       if (estado === 'pendiente') {
         if (tiempoActual === 0) {
-          alert('⚠️ Selecciona el tiempo de preparación antes de aceptar el pedido.');
+          showToastTopRight({
+            message: 'Por favor, ajusta el tiempo antes de aceptar el pedido.',
+            duration: 3500,
+            background: '#ef4444',
+            color: '#fff'
+          })
           return;
         }
 
@@ -446,6 +503,7 @@ function setupApp() {
                 pedido.estado = 'En preparacion';
                 handleNewOrder(pedido);
               }
+              actualizarContadorPreparacion(pedidosPrevios);
               const popup = document.getElementById('pedidoPopup');
               if (popup) popup.style.display = 'none';
             } else {
@@ -880,7 +938,12 @@ function setupOrderDetailsListener() {
       // Oculta ambos popups ante cualquier error
       if (popupNormal) popupNormal.style.display = 'none';
       if (popupListo) popupListo.style.display = 'none';
-      alert("No se pudo cargar el detalle del pedido.");
+      showToastTopRight({
+        message: 'Error al cargar el pedido, intente de nuevo.',
+        background: '#ef4444',
+        color: '#fff',
+        duration: 3500
+      })
     }
   });
 }
@@ -1134,7 +1197,7 @@ document.addEventListener('keydown', function(e){
   if (e.key === 'Escape') cerrarCancelarPedidoModal();
 });
 
-const WEBHOOK_URL = 'https://webhook.site/e45ed4d4-7a0b-4258-b03a-f4fa20a53a41';
+const WEBHOOK_URL = 'https://webhook.site/e6bd42b2-b1ad-49be-ae2b-cc246c974c56';
 async function cancelarPedidoCompleto(codigoPedido, motivo) {
   try {
     const resp = await fetch('/api/cancelarPedido', {
@@ -1376,7 +1439,7 @@ function cargarPedidosEnPreparacion(sucursal) {
         }
 
         pedidosPrevios = pedidos;
-        grid.innerHTML = "";
+        grid.querySelectorAll('.order-card').forEach(card => card.remove());
         iniciarCronometrosPedidosEnPreparacion();
 
         if (pedidos.length === 0) {
@@ -1458,6 +1521,26 @@ function actualizarTiempoDisplay() {
 initializeApp().catch(error => {
   console.error("❌ Error fatal en la inicialización:", error);
 });
+
+const ROL_USUARIO = localStorage.getItem('rol');
+const SUCURSAL_USUARIO = localStorage.getItem('sucursal');
+let nombreBienvenida;
+
+if (ROL_USUARIO === 'admin' && SUCURSAL_USUARIO === 'ALL') {
+  nombreBienvenida = 'Admin';
+} else {
+  nombreBienvenida = SUCURSAL_USUARIO || 'Sucursal no especificada';
+}
+
+if (localStorage.getItem('showWelcomeToast') === 'true') {
+  showToastTopRight({
+    message: `¡Bienvenido a Soru - ${nombreBienvenida}!`,
+    duration: 4500,
+    background: '#fff',
+    color: '#2563eb'
+  });
+  localStorage.removeItem('showWelcomeToast');
+}
 
 function mostrarSelectorTiempo(mostrar, tiempo = 0) {
   const timeControls = document.querySelector('.time-controls');
@@ -1822,30 +1905,65 @@ async function obtenerPedidosParaEstadisticas() {
 }
 
 function renderEstadisticas(pedidos) {
-  // Filtra pedidos relevantes
+  // FILTRO SOLO POR FECHA (día/mes/año, ignora hora)
+  function esMismoDia(pedido) {
+    // Obtiene la fecha del pedido
+    const fecha = pedido.fecha || pedido.Fecha || pedido.date || pedido.Date;
+    if (!fecha) return false;
+
+    let pedidoDateObj;
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(fecha)) {
+      // Formato dd/mm/yyyy
+      const [dia, mes, anio] = fecha.split('/');
+      pedidoDateObj = new Date(`${anio}-${mes}-${dia}`);
+    } else if (/^\d{4}-\d{2}-\d{2}/.test(fecha)) {
+      // Formato ISO o yyyy-mm-dd...
+      pedidoDateObj = new Date(fecha);
+    } else if (fecha.includes('T')) {
+      // Formato ISO con hora
+      pedidoDateObj = new Date(fecha);
+    } else {
+      return false;
+    }
+
+    if (isNaN(pedidoDateObj)) return false;
+
+    // Obtiene la fecha actual (local)
+    const ahora = new Date();
+    // Para pruebas, puedes forzar la fecha:
+    // const ahora = new Date("2025-08-01T03:00:00");
+
+    return (
+      pedidoDateObj.getFullYear() === ahora.getFullYear() &&
+      pedidoDateObj.getMonth() === ahora.getMonth() &&
+      pedidoDateObj.getDate() === ahora.getDate()
+    );
+  }
+
+  // --- FILTRO FINAL SOLO POR FECHA ---
   const relevantes = pedidos.filter(p => {
-    const estado = (p.estado || '').toLowerCase();
-    return estado === 'liberado' || estado === 'cancelado';
+    const estado = (p.estado || p.Estado || '').toLowerCase();
+    return (estado === 'liberado' || estado === 'cancelado') && esMismoDia(p);
   });
 
-  const completados = relevantes.filter(p => (p.estado || '').toLowerCase() === 'liberado');
-  const cancelados = relevantes.filter(p => (p.estado || '').toLowerCase() === 'cancelado');
+  const completados = relevantes.filter(p => (p.estado || p.Estado || '').toLowerCase() === 'liberado');
+  const cancelados = relevantes.filter(p => (p.estado || p.Estado || '').toLowerCase() === 'cancelado');
 
   const totalPedidos = relevantes.length;
   const pedidosCompletads = completados.length;
   const pedidosCancelados = cancelados.length;
 
   const tiempos = relevantes
-    .map(p => parseInt(p.tiempo))
+    .map(p => parseInt(p.tiempo || p.Tiempo))
     .filter(t => !isNaN(t));
   const promedioTiempo = tiempos.length > 0
     ? Math.round(tiempos.reduce((a, b) => a + b, 0) / tiempos.length)
     : 0;
 
   // MÉTODOS DE PAGO SOLO EN RELEVANTES
-  const efectivo = relevantes.filter(p => (p.pago || '').toLowerCase() === 'efectivo').length;
-  const tarjetas = relevantes.filter(p => (p.pago || '').toLowerCase() === 'tarjeta').length;
-  const transferencias = relevantes.filter(p => (p.pago || '').toLowerCase() === 'transferencia').length;
+  const efectivo = relevantes.filter(p => ((p.pago || p.Pago || '').toLowerCase() === 'efectivo')).length;
+  const tarjetas = relevantes.filter(p => ((p.pago || p.Pago || '').toLowerCase() === 'tarjeta')).length;
+  const transferencias = relevantes.filter(p => ((p.pago || p.Pago || '').toLowerCase() === 'transferencia')).length;
 
   document.getElementById("totalPedidos").textContent = totalPedidos;
   document.getElementById("completedPedidos").textContent = pedidosCompletads;
@@ -1857,6 +1975,7 @@ function renderEstadisticas(pedidos) {
 }
 
 function setEstadisticasCero() {
+  console.log("⚠️ No se pudieron cargar estadísticas, estableciendo valores por defecto.");
   document.getElementById("totalPedidos").textContent = 0;
   document.getElementById("completedPedidos").textContent = 0;
   document.getElementById("canceledPedidos").textContent = 0;
@@ -2029,6 +2148,33 @@ function enviarCorteEmail() {
     }
   })
 }
+
+// Modal about
+const btnAbout = document.getElementById('about-btn');
+const modalAbout = document.getElementById('aboutModal');
+const aboutClose = document.getElementById('aboutClose');
+const modalContent = document.querySelector('.modal');
+
+btnAbout.addEventListener('click', () => {
+  modalAbout.style.display = 'flex';
+});
+
+aboutClose.addEventListener('click', () => {
+  modalAbout.style.display = 'none';
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && modalAbout.style.display === 'flex') {
+    modalAbout.style.display = 'none';
+  }
+});
+
+modalAbout.addEventListener('click', (e) => {
+  if (!modalContent.contains(e.target)) {
+    modalAbout.style.display = 'none';
+  }
+});
+
 
 // Ejemplo: Llama esta función cuando abras el panel admin o cada vez que quieras refrescar estadísticas
 // actualizarEstadisticasAdmin();
