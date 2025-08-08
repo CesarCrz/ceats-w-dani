@@ -111,9 +111,9 @@ app.post('/api/pedidos/:codigo/estado', async (req, res) => {
         body: JSON.stringify({
           codigoPedido: pedido.codigo,
           nombre: pedido.nombre,
-          estadoAnterior,
-          nuevoEstado,
-          mensaje: msg,
+          lastState: estadoAnterior,
+          newState: nuevoEstado,
+          message: msg,
           timestamp: new Date().toISOString()
         })
       });
